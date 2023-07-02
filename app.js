@@ -35,7 +35,7 @@ app.use(logger(loggerFormat, {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use("", require('./routes'));
+let routes = require('./routes')(app);
 
 app.use((req, res, next) => {
   console.log("check 404")
