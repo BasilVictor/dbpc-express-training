@@ -8,7 +8,8 @@ let config = function() {
                     password: "password",
                     database: "express_training",
                     multipleStatements: true
-                }
+                },
+                secretKey: "secretKey@123409#JWT"
             };
     }
 }

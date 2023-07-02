@@ -2,6 +2,7 @@ let router = require('express').Router();
 let {check, validationResult} = require('express-validator');
 let config = require('../config');
 let connection = require('mysql2').createPool(config.database);
+const jwt = require('jsonwebtoken');
 
 router.post('/login', [check('email', 'Email is required and must be a valid email').notEmpty().isEmail(), check('password', 'Password is required').notEmpty()], (req, res, next) => {
     const errors = validationResult(req);
@@ -27,8 +28,11 @@ router.post('/login', [check('email', 'Email is required and must be a valid ema
                 });
             }
             if(rows.length == 1) {
+                const payload = { user_id: rows[0].id, name: rows[0].name };
+                const accessToken = jwt.sign(payload, config.secretKey);
                 return res.status(200).json({
                     status: 0,
+                    data: accessToken,
                     message: "Login successful"
                 });
             } else {
