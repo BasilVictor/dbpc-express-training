@@ -3,6 +3,7 @@ let {check, validationResult} = require('express-validator');
 let config = require('../config');
 let connection = require('mysql2').createPool(config.database);
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 router.post('/login', [check('email', 'Email is required and must be a valid email').notEmpty().isEmail(), check('password', 'Password is required').notEmpty()], (req, res, next) => {
     const errors = validationResult(req);
@@ -19,7 +20,7 @@ router.post('/login', [check('email', 'Email is required and must be a valid ema
                 message: 'Something went wrong. Please try again later.'
             })
         }
-        tempConnection.query("select * from users where email = ? AND password = ?;", [email, password], async(err, rows, field) => {
+        tempConnection.query("select * from users where email = ?;", [email], async(err, rows, field) => {
             tempConnection.release();
             if (err) {
                 console.log("error", err)
@@ -28,15 +29,23 @@ router.post('/login', [check('email', 'Email is required and must be a valid ema
                 });
             }
             if(rows.length == 1) {
-                const payload = { user_id: rows[0].id, name: rows[0].name };
-                const accessToken = jwt.sign(payload, config.secretKey);
-                return res.status(200).json({
-                    status: 0,
-                    data: accessToken,
-                    message: "Login successful"
-                });
+                const validPassword = await bcrypt.compare(password, rows[0].password);
+                if(validPassword) {
+                    const payload = { user_id: rows[0].id, name: rows[0].name };
+                    const accessToken = jwt.sign(payload, config.secretKey);
+                    return res.status(200).json({
+                        status: 0,
+                        data: accessToken,
+                        message: "Login successful"
+                    });
+                } else {
+                    return res.status(400).json({
+                        status: 0,
+                        message: "Invalid email and password"
+                    });
+                }
             } else {
-                return res.status(200).json({
+                return res.status(400).json({
                     status: 0,
                     message: "Login failed"
                 });
